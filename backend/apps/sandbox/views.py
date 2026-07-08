@@ -147,9 +147,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
             for file in files:
                 # Sanitize path to prevent Zip Slip (Directory Traversal)
-                clean_path = os.path.normpath(file.path.lstrip("/"))
-                if clean_path.startswith("..") or os.path.isabs(clean_path):
-                    continue  # Skip malicious paths attempting to escape the directory
+                raw_path = (file.path or "").replace("\\", "/").lstrip("/")
+                clean_path = os.path.normpath(raw_path).replace("\\", "/")
+                if clean_path in ("", ".", "..") or clean_path.startswith("../") or ":" in clean_path.split("/", 1)[0]:
+                    continue  # Skip paths that could escape the archive root
                 zip_file.writestr(clean_path, file.content)
 
             # Add a README file
