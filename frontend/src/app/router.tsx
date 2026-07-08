@@ -15,6 +15,7 @@ import { NotFoundPage } from "../pages/NotFoundPage";
 import { ServerErrorPage } from "../pages/ServerErrorPage";
 import { ModerationDashboard } from "../pages/ModerationDashboard";
 import { SandboxPage } from "../pages/SandboxPage";
+import { ContributorSandboxPage } from "../pages/ContributorSandboxPage";
 import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
 import { LeaderboardPage } from "../pages/LeaderboardPage";
 import { VerifyCertificatePage } from "../pages/VerifyCertificatePage";
@@ -172,6 +173,14 @@ export function AppRouter() {
                 <A11yLinterSandbox />
               </div>
             </div>
+          }
+        />
+        <Route
+          path="/contributor-sandbox"
+          element={
+            <ProtectedRoute>
+              <ContributorSandboxPage />
+            </ProtectedRoute>
           }
         />
         <Route
