@@ -13,7 +13,9 @@ import { SignupPage } from "../pages/SignupPage";
 import { LessonPage } from "../pages/LessonPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { ServerErrorPage } from "../pages/ServerErrorPage";
+import { ModerationDashboard } from "../pages/ModerationDashboard";
 import { SandboxPage } from "../pages/SandboxPage";
+import { ContributorSandboxPage } from "../pages/ContributorSandboxPage";
 import { ProfileSettingsPage } from "../pages/ProfileSettingsPage";
 import { LeaderboardPage } from "../pages/LeaderboardPage";
 import { VerifyCertificatePage } from "../pages/VerifyCertificatePage";
@@ -160,6 +162,14 @@ export function AppRouter() {
           element={<SandboxPage />}
         />
         <Route
+          path="/contributor-sandbox"
+          element={
+            <ProtectedRoute>
+              <ContributorSandboxPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/test-terminal"
           element={
             <div className="p-10 h-screen bg-[#0a0a0a] flex gap-8">
@@ -196,6 +206,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <PeerReviewPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/moderation"
+          element={
+            <ProtectedRoute>
+              <ModerationDashboard />
             </ProtectedRoute>
           }
         />

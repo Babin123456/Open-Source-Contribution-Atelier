@@ -340,14 +340,62 @@ class invalidates:
 # Signal Handlers for Automatic Invalidation
 # ============================================================
 
+# Flag to disable signals during migrations
+_cache_signals_enabled = True
+
+
+def disable_cache_signals():
+    """Disable cache invalidation signals (used during migrations)"""
+    global _cache_signals_enabled
+    _cache_signals_enabled = False
+
+
+def enable_cache_signals():
+    """Re-enable cache invalidation signals"""
+    global _cache_signals_enabled
+    _cache_signals_enabled = True
+
+
+def _is_migration_in_progress():
+    """Check if Django is running migrations"""
+    import sys
+    # Check if we're in a manage.py command (migration)
+    if 'manage.py' in sys.argv and 'migrate' in sys.argv:
+        return True
+    try:
+        from django.db import connection
+        with connection.cursor() as cursor:
+            # Check if contenttypes table has the name column properly
+            cursor.execute("PRAGMA table_info(django_content_type)")
+            columns = {row[1] for row in cursor.fetchall()}
+            return 'name' not in columns
+    except Exception:
+        return True
+
 
 @receiver(post_save)
 def invalidate_cache_on_save(sender, instance, created, **kwargs):
     """
     Invalidate cache when a model is saved.
     """
+if not _cache_signals_enabled:
+    return
+
+# Skip during migrations or when system apps are involved
+if (
+    _is_migration_in_progress()
+    or sender._meta.app_label
+    in ["migrations", "contenttypes", "sessions", "admin", "sites", "auth"]
+):
+    return
+
+try:
     manager = CacheManager()
     manager.invalidate_dependencies(instance)
+except Exception:
+    # Silently ignore errors during migrations/cache invalidation
+    pass
+        pass
 
 
 @receiver(post_delete)
@@ -355,8 +403,30 @@ def invalidate_cache_on_delete(sender, instance, **kwargs):
     """
     Invalidate cache when a model is deleted.
     """
+if not _cache_signals_enabled:
+    return
+
+# Skip during migrations or for Django system apps
+if _is_migration_in_progress():
+    return
+
+if sender._meta.app_label in [
+    "migrations",
+    "contenttypes",
+    "sessions",
+    "admin",
+    "sites",
+    "auth",
+]:
+    return
+
+try:
     manager = CacheManager()
     manager.invalidate_dependencies(instance)
+except Exception:
+    # Silently ignore cache invalidation errors
+    pass
+        pass
 
 
 @receiver(m2m_changed)
@@ -368,12 +438,18 @@ def invalidate_cache_on_m2m_change(
     """
     if action in ["post_add", "post_remove", "post_clear"]:
         manager = CacheManager()
-        manager.invalidate_dependencies(instance)
+        try:
+            manager.invalidate_dependencies(instance)
+        except Exception:
+            pass
 
         # Also invalidate for related objects
         for pk in pk_set:
             try:
                 related = model.objects.get(pk=pk)
-                manager.invalidate_dependencies(related)
+                try:
+                    manager.invalidate_dependencies(related)
+                except Exception:
+                    pass
             except model.DoesNotExist:
                 pass

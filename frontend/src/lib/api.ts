@@ -1,8 +1,19 @@
 import { enqueueOfflineAction } from "./offlineQueue";
 import toast from "react-hot-toast"; // <-- YEH HUMNE ADD KIYA HAI
 
+const getApiBaseUrl = () => {
+  if (typeof import.meta !== "undefined" && import.meta.env) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  if (typeof process !== "undefined" && process.env) {
+    return process.env.NEXT_PUBLIC_API_URL || process.env.VITE_API_BASE_URL;
+  }
+  return undefined;
+};
+
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL?.trim() || `${window.location.origin}/api`;
+  getApiBaseUrl()?.trim() ||
+  (typeof window !== "undefined" ? `${window.location.origin}/api` : "http://127.0.0.1:8000/api");
 
 type RequestOptions = RequestInit & {
   requireAuth?: boolean;
@@ -519,4 +530,34 @@ export async function executeTerminalCommand(
     method: "POST",
     body: JSON.stringify({ command }),
   });
+}
+
+export async function exportWorkspaceZip(projectId: string): Promise<void> {
+  const token = localStorage.getItem("accessToken");
+  const response = await fetch(`${API_BASE}/sandbox/projects/${projectId}/export_zip/`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to export workspace");
+  }
+
+  // Get filename from Content-Disposition header
+  const contentDisposition = response.headers.get("Content-Disposition") || "";
+  const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+  const filename = filenameMatch ? filenameMatch[1] : "workspace-export.zip";
+
+  // Create blob and download
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
 }
