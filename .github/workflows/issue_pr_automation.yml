@@ -165,14 +165,14 @@ jobs:
 
             // Extract issue labels to check what program it belongs to
             const labels = issue.labels.map(l => l.name.toLowerCase());
-            const isSsoc = labels.includes('ssoc26');
-            const isEcsoc = labels.includes('ecsoc26');
+            const isSsoc = labels.some(l => l.includes('ssoc26') || l.includes('ssoc-26'));
+            const isEcsoc = labels.some(l => l.includes('ecsoc26') || l.includes('ecsoc-26'));
             
             const commentText = (comment.body || '').toLowerCase();
 
             if (isSsoc || isEcsoc) {
-              const mentionsSsoc = /\b(ssoc|ssoc26|ssoc-26)\b/i.test(commentText);
-              const mentionsEcsoc = /\b(ecsoc|ecsoc26|ecsoc-26)\b/i.test(commentText);
+              const mentionsSsoc = /\b(ssoc|ssoc26|ssoc2026|ssoc-26|ssoc-2026)\b/i.test(commentText);
+              const mentionsEcsoc = /\b(ecsoc|ecsoc26|ecsoc2026|ecsoc-26|ecsoc-2026)\b/i.test(commentText);
 
               if (isSsoc && !mentionsSsoc) {
                 await github.rest.issues.createComment({
