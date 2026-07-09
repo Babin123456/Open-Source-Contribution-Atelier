@@ -1,4 +1,5 @@
 import { Printer, X } from "lucide-react";
+import { SocialShareButtons } from "../ui/SocialShareButtons";
 import { BADGES } from "../../constants/badges";
 import { ModuleProgressList } from "./ModuleProgressList";
 import type { ModuleData, PersonalStats } from "./types";
@@ -126,13 +127,18 @@ export function ProgressReportModal({
           </div>
         </div>
 
-        <div className="no-print mt-8 flex gap-3 print:hidden">
+        <div className="no-print mt-8 flex gap-3 print:hidden items-center">
           <button
             onClick={() => window.print()}
             className="flex items-center gap-2 rounded-lg bg-primary text-black border-4 border-black px-6 py-3 font-black text-sm shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm cursor-pointer"
           >
             <Printer size={16} /> Export as PDF
           </button>
+          <SocialShareButtons
+            url="https://github.com/nandinigoyaldev/Open-Source-Contribution-Atelier"
+            title={`I just hit ${personalStats.total_xp ?? 0} XP on the Open Source Contribution Atelier!`}
+            hashtags="OpenSource,ContributionAtelier"
+          />
           <button
             onClick={onClose}
             className="rounded-lg bg-white border-4 border-black px-6 py-3 font-black text-sm shadow-card-sm hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-card-sm cursor-pointer"
