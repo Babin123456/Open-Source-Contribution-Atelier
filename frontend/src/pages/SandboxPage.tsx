@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { ProjectWorkspace } from "../components/ui/ProjectWorkspace";
 import { OnboardingTour } from "../components/ui/OnboardingTour";
 import { Map } from "lucide-react";
+import { Step } from "react-joyride";
 
 export function SandboxPage() {
   const [runTour, setRunTour] = useState(false);
 
-  const sandboxSteps = [
+  const sandboxSteps: Step[] = [
     {
       target: "#tour-sandbox-explorer",
       title: "Project Explorer 📁",
