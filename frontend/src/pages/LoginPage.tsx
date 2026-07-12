@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { GitBranch, LogIn, ArrowRight } from "lucide-react";
 import { AuthPageShell } from "../features/auth/AuthPageShell";
@@ -73,9 +72,10 @@ export function LoginPage() {
       const redirect = sessionStorage.getItem('login_redirect') || '/dashboard';
       sessionStorage.removeItem('login_redirect');
       window.location.href = redirect;
-      
+
       sessionStorage.setItem("justLoggedIn", "true");
       window.location.href = "/dashboard";
+
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Failed to login"));
       toast.error('Login failed. Please try again.');
@@ -204,6 +204,10 @@ export function LoginPage() {
       </form>
     </AuthPageShell>
   );
+
+}
+
 }
 
 export default LoginPage;
+
