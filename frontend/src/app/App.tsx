@@ -9,7 +9,6 @@ import { ThemeToggle } from "../components/ui/ThemeToggle";
 import { CommandPalette } from "../components/CommandPalette";
 import ReportIssueButton from "../components/ui/ReportIssueButton";
 import { NotificationProvider } from "../features/notifications/NotificationContext";
-import { ScrollToTop } from "../components/ui/ScrollToTop";
 import { WebSocketStatusIndicator } from "../components/WebSocketStatus/WebSocketStatusIndicator";
 
 // Pure React Onboarding Tour Step Definition Type Map
@@ -138,7 +137,6 @@ export function App() {
                 }}
               />
               <AppRouter />
-              <ScrollToTop />
               <CommandPalette />
               <ReportIssueButton />
               <WebSocketStatusIndicator url="" />

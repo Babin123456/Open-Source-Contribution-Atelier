@@ -87,6 +87,14 @@ class OTPToken(models.Model):
         return f"OTPToken(user={self.user.username}, used={self.is_used})"
 
 
+    def is_expired(self) -> bool:
+        """Return True if the token is older than OTP_TIMEOUT_MINUTES."""
+        from datetime import timedelta
+        from django.utils import timezone
+        timeout = getattr(settings, "OTP_TIMEOUT_MINUTES", 15)
+        return timezone.now() > self.created_at + timedelta(minutes=timeout)
+
+
 class MagicLinkToken(models.Model):
     """
     Secure, single-use magic link token sent to a user's email for passwordless login.

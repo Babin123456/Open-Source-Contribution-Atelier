@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { GitBranch, LogIn, ArrowRight } from "lucide-react";
+import { GitBranch } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { AuthPageShell } from "../features/auth/AuthPageShell";
 import { fetchApi } from "../lib/api";

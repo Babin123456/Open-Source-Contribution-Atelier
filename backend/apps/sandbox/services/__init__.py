@@ -17,7 +17,7 @@ ALLOWED_PREFIXES = (
 )
 
 
-from .linter import lint_command
+from ..linter import lint_command
 
 
 @dataclass
@@ -67,7 +67,7 @@ import os
 import sys
 import tempfile
 
-from .resource_manager import ResourceManagementEngine, SecurityViolation
+from ..resource_manager import ResourceManagementEngine, SecurityViolation
 
 
 async def stream_python_execution(

@@ -684,21 +684,46 @@ class PasswordResetValidateTokenView(APIView):
         })
 
 
+class MagicLinkRequestView(APIView):
+    """
+    POST /api/auth/magic-link/request/
+    """
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [MagicLinkRequestThrottle]
+
+    def post(self, request):
+        serializer = MagicLinkRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+
+        user = User.objects.filter(email__iexact=email).first()
+        if user:
+            magic_token = MagicLinkToken.objects.create(user=user)
+            link = frontend_url(f"/login/magic/{magic_token.token}")
+            send_mail(
+                "Your Magic Login Link",
+                f"Click here to log in: {link}",
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=True,
+            )
+
+        return Response(
+            {"message": "If that email exists, we've sent a magic login link to it."},
+            status=status.HTTP_200_OK,
+        )
+
+
 class MagicLinkVerifyView(APIView):
     """
     POST /api/auth/magic-link/verify/
-
-    Accept a magic link token to log the user in.
-    Tokens are single-use and expire after MAGIC_LINK_TIMEOUT_MINUTES.
     """
-
     permission_classes = [permissions.AllowAny]
     throttle_classes = [MagicLinkVerifyThrottle]
 
     def post(self, request):
         serializer = MagicLinkVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         token_value = serializer.validated_data["token"]
 
         try:
@@ -725,6 +750,111 @@ class MagicLinkVerifyView(APIView):
             )
 
         user = magic_token.user
+        magic_token.is_used = True
+        magic_token.save()
+
+        user.last_login = timezone.now()
+        user.save()
+
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class OtpRequestView(APIView):
+    """
+    POST /api/auth/otp/request/
+    """
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [OtpGenerateThrottle]
+
+    def post(self, request):
+        serializer = OtpRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+
+        user = User.objects.filter(email__iexact=email).first()
+        if user:
+            otp_token = OTPToken.objects.create(user=user)
+            send_mail(
+                "Your OTP Verification Link",
+                f"Here is your verification code: {otp_token.token}",
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=True,
+            )
+
+        return Response(
+            {"message": "If that email exists, we've sent an OTP code to it."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class OtpVerifyView(APIView):
+    """
+    POST /api/auth/otp/verify/
+    """
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [OtpVerifyThrottle]
+
+    def post(self, request):
+        serializer = OtpVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+        otp_uuid = serializer.validated_data["otp"]
+
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            return Response(
+                {"error": "invalid_otp", "message": "Invalid OTP code."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            otp_token = OTPToken.objects.get(
+                user=user, token=otp_uuid, is_used=False
+            )
+        except OTPToken.DoesNotExist:
+            return Response(
+                {"error": "invalid_otp", "message": "Invalid OTP code."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if otp_token.is_expired():
+            return Response(
+                {"error": "expired_otp", "message": "This OTP has expired."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        otp_token.is_used = True
+        otp_token.save()
+
+        user.last_login = timezone.now()
+        user.save()
+
+        refresh = RefreshToken.for_user(user)
+        return Response(
+            {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -876,6 +1006,28 @@ class AvatarUploadView(APIView):
         return Response({"error": "No avatar found"}, status=status.HTTP_404_NOT_FOUND)
 
 
+from rest_framework_simplejwt.tokens import RefreshToken
+
+class LogoutView(APIView):
+    """
+    POST /api/auth/logout/
+    Logout by blacklisting the refresh token.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                refresh_token = request.COOKIES.get("refresh_token")
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
+
+
 from apps.chat.models import Message
 from apps.content.models import Comment
 
@@ -923,6 +1075,50 @@ class SecureAccountDeleteView(APIView):
         user.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ExportDataView(APIView):
+    """
+    GET /api/auth/me/export/
+    Export all PII and activity data for the authenticated user as JSON.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        data = {
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "date_joined": user.date_joined.isoformat() if user.date_joined else None,
+            "last_login": user.last_login.isoformat() if user.last_login else None,
+            "profile": {},
+            "lessons_progress": [],
+            "certificates": [],
+        }
+        if hasattr(user, "profile") and user.profile:
+            data["profile"] = {
+                "bio": getattr(user.profile, "bio", ""),
+                "github_username": getattr(user.profile, "github_username", ""),
+                "experience_level": getattr(user.profile, "experience_level", ""),
+                "streak": getattr(user.profile, "streak", 0),
+                "total_xp": getattr(user.profile, "total_xp", 0),
+            }
+        from apps.progress.models import LessonProgress, Certificate
+        for progress in LessonProgress.objects.filter(user=user):
+            data["lessons_progress"].append({
+                "lesson_slug": progress.lesson.slug if progress.lesson else "",
+                "completed": progress.completed,
+                "completed_at": progress.completed_at.isoformat() if progress.completed_at else None,
+                "score": progress.score,
+            })
+        for cert in Certificate.objects.filter(user=user):
+            data["certificates"].append({
+                "certificate_id": str(cert.id),
+                "issued_at": cert.issued_at.isoformat() if cert.issued_at else None,
+            })
+        return Response(data, status=status.HTTP_200_OK)
 
 
 import json

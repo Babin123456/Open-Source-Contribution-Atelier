@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useLocation, Outlet, useNavigate } from "react-router-dom";
 import { Navigation } from "./Navigation";
 import { BadgeToastNotifier } from "../ui/BadgeToastNotifier";
-import { ScrollToTop } from "../ui/ScrollToTop";
 import { SessionTracker } from "../ui/SessionTracker";
 import { useAuth } from "../../features/auth/AuthContext";
 
@@ -56,7 +55,6 @@ export function AppLayout() {
           </div>
         </main>
         <BadgeToastNotifier />
-        <ScrollToTop />
         <SessionTracker />
       </div>
     </>
