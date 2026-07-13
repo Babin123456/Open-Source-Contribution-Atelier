@@ -10,6 +10,7 @@ import SkeletonContributorDashboard from "../components/ui/skeletons/SkeletonCon
 import { useRef } from "react";
 import { useElementSize } from "../hooks/useElementSize";
 import { fetchLessonsApi, Lesson } from "../lib/lessons";
+import { ContinueLearning } from '../components/ContinueLearning';
 import { useUserProgress } from "../hooks/useUserProgress";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { BADGES } from "../constants/badges";
@@ -294,6 +295,8 @@ export function DashboardPage() {
 
     // Build the lessons queue (uncompleted ones first, up to 3)
     const queue = lessons.filter((l) => !isLessonCompleted(l.slug)).slice(0, 3);
+
+    const [lastLesson, setLastLesson] = useState(null);
 
     // Calculate which badges are earned
     const earned = new Set<string>(
@@ -1398,6 +1401,8 @@ export function DashboardPage() {
                     XP
                   </span>
                 </div>
+                <div className="dashboard-content">
+                 <ContinueLearning lastLesson={lastLesson} />
                 <div className="text-center">
                   <span className="block text-2xl font-black text-text dark:text-[#f0ebe2]">
                     {personal_stats?.streak_days ?? 0}
