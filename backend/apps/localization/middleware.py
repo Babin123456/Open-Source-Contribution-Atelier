@@ -9,7 +9,8 @@ class LocaleMiddleware:
         translation.activate(language)
         request.LANGUAGE_CODE = translation.get_language()
         
-        response = self.get_response(request)
-        
-        translation.deactivate()
-        return response
+        try:
+            response = self.get_response(request)
+            return response
+        finally:
+            translation.deactivate()

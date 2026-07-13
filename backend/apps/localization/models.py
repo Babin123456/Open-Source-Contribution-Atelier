@@ -1,7 +1,7 @@
 from django.db import models
 
 class LocalizedContent(models.Model):
-    key = models.CharField(max_length=255, unique=True)
+    key = models.CharField(max_length=255)
     language_code = models.CharField(max_length=10)
     translation = models.TextField()
 
