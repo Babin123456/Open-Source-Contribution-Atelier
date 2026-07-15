@@ -29,6 +29,7 @@ urlpatterns = [
     path("bulk-sync/", BulkSyncProgressView.as_view(), name="bulk-sync"),
     path("bulk-update/", BulkProgressUpdateView.as_view(), name="bulk-update"),
     path("recommendations/", RecommendationsView.as_view(), name="recommendations"),
+    path('certificate/verify/<str:hash>/', CertificateVerifyView.as_view(), name='certificate-verify'),
     path('daily-stats/', DailyLessonStatsView.as_view(), name='daily-stats'),
     path("feed/", CommunityFeedView.as_view(), name="community-feed"),
     path("community-stats/", CommunityStatsView.as_view(), name="community-stats"),
