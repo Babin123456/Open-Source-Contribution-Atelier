@@ -116,6 +116,7 @@ interface ModuleData {
   explanation: string;
   lessons_count: number;
   completed_lessons_count: number;
+  firstLessonSlug: string;
 }
 
 interface LearningPathResponse {
@@ -126,13 +127,14 @@ interface LearningPathResponse {
 const mockModules: ModuleData[] = [
   {
     id: "module-1",
-    title: "What is Open Source?",
+    title: "Why Open Source?",
     description: "Understand the philosophy, history, and community behind open source software.",
     status: "completed",
     score: 95,
     explanation: "You aced this module! Great foundation in open source principles.",
     lessons_count: 6,
     completed_lessons_count: 6,
+    firstLessonSlug: "what-is-open-source",
   },
   {
     id: "module-2",
@@ -143,66 +145,73 @@ const mockModules: ModuleData[] = [
     explanation: "You're making great progress! Focus on understanding git add vs commit to strengthen your foundation.",
     lessons_count: 6,
     completed_lessons_count: 3,
+    firstLessonSlug: "repositories-and-commits",
   },
   {
     id: "module-3",
-    title: "Branches & Collaboration",
+    title: "GitHub — Your Open Source Playground",
     description: "Work with branches, understand merging, and collaborate without conflicts.",
     status: "not started",
     score: 0,
     explanation: "Complete Git Basics first — branches build directly on commit concepts.",
     lessons_count: 6,
     completed_lessons_count: 0,
+    firstLessonSlug: "github-repositories",
   },
   {
     id: "module-4",
-    title: "Pull Requests & Code Review",
+    title: "Open Source Etiquette",
     description: "Learn how to open PRs, review code, and contribute to any project.",
     status: "not started",
     score: 0,
     explanation: "Once you're comfortable with branches, PRs are the next natural step.",
-    lessons_count: 6,
+    lessons_count: 4,
     completed_lessons_count: 0,
+    firstLessonSlug: "respect-and-communication",
   },
   {
     id: "module-5",
-    title: "Open Source Etiquette",
+    title: "Your First Contribution",
     description: "How to communicate, follow conventions, and be a welcome community member.",
     status: "not started",
     score: 0,
     explanation: "Essential skills before contributing to real projects.",
-    lessons_count: 6,
+    lessons_count: 1,
     completed_lessons_count: 0,
+    firstLessonSlug: "first-contribution-walkthrough",
   },
   {
     id: "module-6",
-    title: "Your First Contribution",
+    title: "The Full Contribution Lifecycle",
     description: "Find beginner-friendly issues and make your first open source contribution.",
     status: "not started",
     score: 0,
     explanation: "This is where theory meets practice — exciting milestone ahead!",
-    lessons_count: 6,
+    lessons_count: 1,
     completed_lessons_count: 0,
+    firstLessonSlug: "contribution-lifecycle",
   },
   {
     id: "module-7",
-    title: "Advanced Git & Workflows",
+    title: "Leveling Up: Advanced Git",
     description: "Rebasing, cherry-picking, and professional Git workflows.",
     status: "not started",
     score: 0,
     explanation: "Advanced topics for when you're contributing regularly.",
-    lessons_count: 6,
+    lessons_count: 3,
     completed_lessons_count: 0,
+    firstLessonSlug: "rebasing-and-squashing",
   },
   {
     id: "module-8",
-    title: "Becoming a Maintainer",
+    title: "Finding the Right Project",
     description: "Review PRs, manage issues, and grow your own open source project.",
     status: "not started",
     score: 0,
     explanation: "The final step — you'll be ready to lead your own project!",
-    lessons_count: 6,
+    lessons_count: 1,
     completed_lessons_count: 0,
+    firstLessonSlug: "finding-projects",
   },
 ];
 

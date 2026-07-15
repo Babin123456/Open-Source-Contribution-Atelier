@@ -14,6 +14,7 @@ interface ModuleData {
   explanation: string;
   lessons_count: number;
   completed_lessons_count: number;
+  firstLessonSlug: string;
 }
 
 interface LearningPathResponse {
@@ -176,8 +177,9 @@ export const LearningPathPage: React.FC = () => {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {modules.map((mod) => (
-            <div
+            <Link
               key={mod.id}
+              to={`/lessons/${mod.firstLessonSlug}`}
               className="flex flex-col justify-between p-6 bg-white border-4 border-black rounded-2xl shadow-card-sm hover:shadow-card hover:-translate-y-1 transition-all dark:bg-[#1f1c18] dark:border-[#2e2924] dark:shadow-none"
             >
               <div>
@@ -231,7 +233,7 @@ export const LearningPathPage: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
