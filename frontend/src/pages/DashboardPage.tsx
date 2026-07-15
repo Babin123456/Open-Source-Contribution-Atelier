@@ -97,7 +97,7 @@ export function DashboardPage() {
   const lessons = lessonsData;
   const curriculumData = useMemo(() => buildModulesFromLessons(lessons), [lessons]);
 
-  const { data: contributorData, isLoading: contributorLoading } = useQuery({
+  const { data: contributorData, isLoading: contributorLoading, isError: contributorError } = useQuery({
     queryKey: ["contributorStats"],
     queryFn: () => fetchApi("/dashboard/stats/", { suppressErrorToast: true }),
     enabled: !!user && !user.is_staff,
@@ -272,6 +272,25 @@ export function DashboardPage() {
   // Admin Dashboard Render
   if (user?.is_staff) {
     return <AdminDashboard />;
+  }
+
+  if (contributorError || !contributorData) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 pt-24 pb-12 space-y-10">
+        <div className="rounded-2xl border-4 border-black bg-red-50 p-8 text-center dark:bg-red-900/20 dark:border-red-800">
+          <h2 className="text-2xl font-black mb-2">Failed to load dashboard</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Could not load your stats. Please try refreshing the page.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-black text-white rounded-full font-bold hover:bg-gray-800 transition-colors dark:bg-white dark:text-black dark:hover:bg-gray-200"
+          >
+            Refresh
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const { personal_stats, assigned_issues } = contributorData;

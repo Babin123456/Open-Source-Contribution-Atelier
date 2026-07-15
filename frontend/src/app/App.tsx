@@ -8,6 +8,7 @@ import { queryClient } from "../lib/queryClient";
 import { ThemeToggle } from "../components/ui/ThemeToggle";
 import { CommandPalette } from "../components/CommandPalette";
 import ReportIssueButton from "../components/ui/ReportIssueButton";
+import { ErrorBoundary } from "../components/ui/ErrorBoundary";
 import { NotificationProvider } from "../features/notifications/NotificationContext";
 import { WebSocketStatusIndicator } from "../components/WebSocketStatus/WebSocketStatusIndicator";
 
@@ -120,6 +121,7 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <NotificationProvider>
+          <ErrorBoundary>
           <div className="min-h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
             {/* Global Toast Configuration */}
             <Toaster
@@ -202,6 +204,7 @@ export function App() {
               </div>
             )}
           </div>
+          </ErrorBoundary>
         </NotificationProvider>
       </BrowserRouter>
     </QueryClientProvider>
