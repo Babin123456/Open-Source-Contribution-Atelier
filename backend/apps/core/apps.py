@@ -57,7 +57,6 @@ class CoreConfig(AppConfig):
                 },
             )
 
-            # Monthly audit log archiving
             Schedule.objects.get_or_create(
                 name="audit-log-archive-monthly",
                 defaults={
