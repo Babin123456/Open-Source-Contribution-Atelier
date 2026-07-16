@@ -9,7 +9,15 @@ from rest_framework.views import APIView
 from django.core.cache import cache
 import logging
 
-from .models import CodeSnapshot, Project, ProjectFile, CodeExecutionTrace, CodeReviewThread, SnippetCollection, CodeSnippet
+from .models import (
+    CodeSnapshot,
+    Project,
+    ProjectFile,
+    CodeExecutionTrace,
+    CodeReviewThread,
+    SnippetCollection,
+    CodeSnippet,
+)
 from .serializers import (
     CodeSnapshotSerializer,
     ProjectSerializer,
@@ -31,11 +39,12 @@ logger = logging.getLogger(__name__)
 
 from apps.core.throttling import SlidingWindowScopedThrottle
 
+
 class SandboxVerifySerializer(serializers.Serializer):
     command = serializers.CharField()
     expected_command = serializers.CharField()
     # Optional fields for duplicate prevention
-    code = serializers.CharField(required=False, default='')
+    code = serializers.CharField(required=False, default="")
     payload = serializers.JSONField(required=False, default={})
 
 
@@ -43,32 +52,33 @@ class SandboxVerifyView(APIView):
     """
     Sandbox verification with duplicate execution prevention.
     """
+
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [SlidingWindowScopedThrottle]
     throttle_scope = "sandbox_user"
 
     @prevent_duplicate_execution(
         get_user_id=lambda request: request.user.id,
-        get_code=lambda request: request.data.get('code', ''),
-        get_payload=lambda request: request.data.get('payload', {})
+        get_code=lambda request: request.data.get("code", ""),
+        get_payload=lambda request: request.data.get("payload", {}),
     )
     def post(self, request):
         serializer = SandboxVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         result = verify_git_command(
             serializer.validated_data["command"],
             serializer.validated_data["expected_command"],
         )
-        
+
         # If verification succeeded, mark execution as used
         if result.accepted:
             ExecutionTracker.mark_execution_used(
                 request.user.id,
-                serializer.validated_data.get('code', ''),
-                serializer.validated_data.get('payload', {})
+                serializer.validated_data.get("code", ""),
+                serializer.validated_data.get("payload", {}),
             )
-        
+
         return Response(
             {
                 "accepted": result.accepted,
@@ -83,10 +93,12 @@ class SandboxVerifyView(APIView):
 # CODE SNAPSHOTS
 # ============================================================
 
+
 class CodeSnapshotViewSet(viewsets.ModelViewSet):
     """
     ViewSet for CodeSnapshot model.
     """
+
     serializer_class = CodeSnapshotSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -95,7 +107,6 @@ class CodeSnapshotViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
 
 
 # ============================================================
@@ -110,6 +121,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     """
     ViewSet for Project model.
     """
+
     serializer_class = ProjectSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -245,6 +257,7 @@ class ProjectFileViewSet(viewsets.ModelViewSet):
     """
     ViewSet for ProjectFile model.
     """
+
     serializer_class = ProjectFileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -261,6 +274,7 @@ class CodeExecutionTraceViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for CodeExecutionTrace model (read-only).
     """
+
     serializer_class = CodeExecutionTraceSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -277,6 +291,7 @@ class CodeReviewThreadViewSet(viewsets.ModelViewSet):
     """
     ViewSet for CodeReviewThread model.
     """
+
     serializer_class = CodeReviewThreadSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -302,37 +317,40 @@ class SnippetCollectionViewSet(viewsets.ModelViewSet):
     """
     ViewSet for SnippetCollection model.
     """
+
     serializer_class = SnippetCollectionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return SnippetCollection.objects.filter(user=self.request.user)
 
+
 class CodeSnippetViewSet(viewsets.ModelViewSet):
     """
     ViewSet for CodeSnippet model with filtering.
     """
+
     serializer_class = CodeSnippetSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         queryset = CodeSnippet.objects.filter(user=self.request.user)
-        
+
         # Filtering by collection
-        collection_id = self.request.query_params.get('collection', None)
+        collection_id = self.request.query_params.get("collection", None)
         if collection_id is not None:
             queryset = queryset.filter(collection_id=collection_id)
-        
+
         # Filtering by favorite
-        is_favorite = self.request.query_params.get('is_favorite', None)
+        is_favorite = self.request.query_params.get("is_favorite", None)
         if is_favorite is not None:
-            queryset = queryset.filter(is_favorite=is_favorite.lower() == 'true')
-        
+            queryset = queryset.filter(is_favorite=is_favorite.lower() == "true")
+
         # Search by title
-        search = self.request.query_params.get('search', None)
+        search = self.request.query_params.get("search", None)
         if search:
             queryset = queryset.filter(title__icontains=search)
-        
+
         return queryset
 
 
@@ -340,71 +358,66 @@ class CodeSnippetViewSet(viewsets.ModelViewSet):
 # EXECUTION STATUS (For debugging)
 # ============================================================
 
+
 class ExecutionStatusView(APIView):
     """
     Check execution status for debugging duplicate prevention.
     """
+
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        code = request.query_params.get('code', '')
-        payload_raw = request.query_params.get('payload', '{}')
-        
+        code = request.query_params.get("code", "")
+        payload_raw = request.query_params.get("payload", "{}")
+
         if not code:
             return Response(
-                {'error': 'Code is required'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Code is required"}, status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             import json
+
             payload = json.loads(payload_raw)
         except:
             payload = {}
-        
-        is_duplicate = ExecutionTracker.is_duplicate(
-            request.user.id,
-            code,
-            payload
+
+        is_duplicate = ExecutionTracker.is_duplicate(request.user.id, code, payload)
+
+        return Response(
+            {
+                "is_duplicate": is_duplicate,
+                "user_id": request.user.id,
+            }
         )
-        
-        return Response({
-            'is_duplicate': is_duplicate,
-            'user_id': request.user.id,
-        })
 
 
 # ============================================================
 # EXECUTION TRACKER ADMIN (For testing)
 # ============================================================
 
+
 class ClearExecutionView(APIView):
     """
     Clear execution from cache (for testing/admin).
     """
+
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        code = request.data.get('code', '')
-        payload = request.data.get('payload', {})
-        
+        code = request.data.get("code", "")
+        payload = request.data.get("payload", {})
+
         if not code:
             return Response(
-                {'error': 'Code is required'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Code is required"}, status=status.HTTP_400_BAD_REQUEST
             )
-        
-        ExecutionTracker.clear_execution(
-            request.user.id,
-            code,
-            payload
-        )
-        
-        return Response(
-            {'message': 'Execution cleared from cache'},
-            status=status.HTTP_200_OK
-        )
 
+        ExecutionTracker.clear_execution(request.user.id, code, payload)
+
+        return Response(
+            {"message": "Execution cleared from cache"}, status=status.HTTP_200_OK
+        )
 
         # Filtering
         collection_id = self.request.query_params.get("collection", None)
@@ -447,7 +460,7 @@ class WorkspaceSnapshotViewSet(viewsets.ModelViewSet):
                 {"project": "You do not own this project."}
             )
         serializer.save()
- 
+
 
 # ============================================================
 # MAINTAINER ROLEPLAY
@@ -456,20 +469,25 @@ class WorkspaceSnapshotViewSet(viewsets.ModelViewSet):
 from .models import MaintainerScenario, MaintainerEvaluation
 from .serializers import MaintainerScenarioSerializer, MaintainerEvaluationSerializer
 
+
 class MaintainerScenarioViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = MaintainerScenarioSerializer
     permission_classes = [permissions.IsAuthenticated]
     queryset = MaintainerScenario.objects.all()
 
+
 class MaintainerEvaluationViewSet(viewsets.ModelViewSet):
     serializer_class = MaintainerEvaluationSerializer
     permission_classes = [permissions.IsAuthenticated]
+
     def get_queryset(self):
         return MaintainerEvaluation.objects.filter(user=self.request.user)
+
 
 from .models import CollabSession
 from .serializers import CollabSessionSerializer
 from django.contrib.auth import get_user_model
+
 
 class CollabSessionViewSet(viewsets.ModelViewSet):
     serializer_class = CollabSessionSerializer
@@ -479,15 +497,17 @@ class CollabSessionViewSet(viewsets.ModelViewSet):
         return CollabSession.objects.filter(
             Q(project__user=self.request.user) | Q(allowed_users=self.request.user)
         ).distinct()
-    
+
     @action(detail=True, methods=["post"])
     def invite_mentor(self, request, pk=None):
         session = self.get_object()
-        
+
         # Only project owner can invite
         if session.project and session.project.user != request.user:
-            return Response({"error": "Only the project owner can invite mentors."}, status=403)
-            
+            return Response(
+                {"error": "Only the project owner can invite mentors."}, status=403
+            )
+
         username = request.data.get("username")
         User = get_user_model()
         try:
@@ -511,10 +531,13 @@ class PipelineExecutionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return PipelineExecution.objects.filter(user=self.request.user).prefetch_related("jobs")
+        return PipelineExecution.objects.filter(
+            user=self.request.user
+        ).prefetch_related("jobs")
 
     def perform_create(self, serializer):
         from .services.pipeline_simulator import run_pipeline_simulation
+
         pipeline = serializer.save(user=self.request.user)
 
         code = ""
@@ -548,9 +571,11 @@ class ConflictScenarioViewSet(viewsets.ReadOnlyModelViewSet):
         scenario = self.get_object()
         submitted_code = request.data.get("submitted_code", "")
 
-        if re.search(r"<<<<<<<\s*HEAD", submitted_code) or \
-           re.search(r"=======", submitted_code) or \
-           re.search(r">>>>>>>", submitted_code):
+        if (
+            re.search(r"<<<<<<<\s*HEAD", submitted_code)
+            or re.search(r"=======", submitted_code)
+            or re.search(r">>>>>>>", submitted_code)
+        ):
             error_msg = "Your code still contains unresolved Git conflict markers."
             ConflictAttempt.objects.create(
                 scenario=scenario,
@@ -565,7 +590,11 @@ class ConflictScenarioViewSet(viewsets.ReadOnlyModelViewSet):
             return "\n".join(line.rstrip() for line in text.splitlines()).strip()
 
         passed = _normalize(submitted_code) == _normalize(scenario.expected_resolution)
-        error_msg = "" if passed else "The resolved code does not match the expected correct output."
+        error_msg = (
+            ""
+            if passed
+            else "The resolved code does not match the expected correct output."
+        )
 
         attempt = ConflictAttempt.objects.create(
             scenario=scenario,
@@ -582,3 +611,76 @@ class ConflictScenarioViewSet(viewsets.ReadOnlyModelViewSet):
             },
             status=status.HTTP_200_OK if passed else status.HTTP_400_BAD_REQUEST,
         )
+
+
+# ============================================================
+# FEATURE 3: LICENSE & DEPENDENCY DETECTIVE
+# ============================================================
+
+from .models import LicenseScenario, DependencyDiff, LicenseAttempt
+from .serializers import LicenseScenarioSerializer, LicenseAttemptSerializer
+
+
+class LicenseScenarioViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Viewset for License Scenarios (Dependency Detective).
+    """
+
+    queryset = LicenseScenario.objects.all().order_by("-created_at")
+    serializer_class = LicenseScenarioSerializer
+    permission_classes = [permissions.AllowAny]
+
+    @action(detail=True, methods=["post"])
+    def evaluate(self, request, pk=None):
+        scenario = self.get_object()
+        user = request.user if request.user.is_authenticated else None
+        approved = request.data.get("approved")
+        flagged_dependencies = request.data.get("flagged_dependencies", [])
+
+        if approved is None:
+            return Response(
+                {"error": "You must provide 'approved' boolean."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        violations = scenario.dependencies.filter(is_violation=True)
+        has_violations = violations.exists()
+
+        is_successful = False
+        feedback = ""
+
+        if has_violations and approved:
+            is_successful = False
+            feedback = "You approved a PR with a license violation!"
+        elif has_violations and not approved:
+            # Check if they flagged the correct ones
+            violation_ids = set(violations.values_list("id", flat=True))
+            flagged_set = set(flagged_dependencies)
+
+            if violation_ids == flagged_set:
+                is_successful = True
+                feedback = "Great job! You caught all the license violations."
+            elif violation_ids.issubset(flagged_set):
+                is_successful = False
+                feedback = (
+                    "You caught the violations, but you also flagged safe dependencies."
+                )
+            else:
+                is_successful = False
+                feedback = "You rejected the PR, but you missed some of the actual license violations."
+        elif not has_violations and approved:
+            is_successful = True
+            feedback = "Correct! The PR is safe to merge."
+        elif not has_violations and not approved:
+            is_successful = False
+            feedback = "You rejected a perfectly safe PR."
+
+        attempt = LicenseAttempt.objects.create(
+            user=user,
+            scenario=scenario,
+            approved=approved,
+            is_successful=is_successful,
+            feedback=feedback,
+        )
+
+        return Response({"is_successful": is_successful, "feedback": feedback})
