@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { GitTerminal } from "../components/GitTerminal";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import {
   ChevronLeft,
@@ -66,6 +65,8 @@ import { LessonHistoryModal } from "../components/LessonHistoryModal";
 import { GitGraph } from "../components/ui/GitGraph";
 import { NotePanel } from "../components/ui/NotePanel";
 import { CommitMessageCoach } from "../components/ui/CommitMessageCoach";
+import { ContextualGitCheatSheet } from "../components/ui/ContextualGitCheatSheet";
+import { moduleIdFromFilePath } from "../lib/contextualGitCheatSheet";
 import { LessonFeedbackWidget } from "../components/ui/LessonFeedbackWidget";
 import { PythonSandbox } from "../components/ui/PythonSandbox";
 const CollabPythonSandbox = React.lazy(() =>
@@ -1169,6 +1170,18 @@ export function LessonPage() {
                   >
                     <h3 className="text-xl font-black mb-4 flex items-center gap-2 text-text dark:text-[#f0ebe2]">
                       <span>💻</span> Sandbox terminal check
+                      <span className="ml-auto">
+                        <ContextualGitCheatSheet
+                          lessonSlug={lesson.slug}
+                          moduleId={
+                            moduleIdFromFilePath(lesson.filePath) ||
+                            (lesson.category?.startsWith("module-")
+                              ? lesson.category
+                              : undefined)
+                          }
+                          onInsertCommand={(command) => setInput(command)}
+                        />
+                      </span>
                     </h3>
 
                     <GitGraph state={repoState} />
